@@ -62,7 +62,6 @@ cfa_essay_evaluation/
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
-   sou
    ```
 
 3. Install the required Python packages:

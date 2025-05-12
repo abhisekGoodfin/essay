@@ -22,3 +22,4 @@ __pycache__/
 # Ignore IDE-specific files
 .vscode/
 .idea/
+updated_data.json
