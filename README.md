@@ -57,21 +57,21 @@ cfa_essay_evaluation/
    cd cfa_essay_evaluation
    ```
 
-2. Install the required Python packages:
+2. Create a virtual environment in the current directory:
+
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   sou
+   ```
+
+3. Install the required Python packages:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Configure your API keys and settings in the `config.py` file.
-
-### Setting Up a Python Virtual Environment
-
-1. Create a virtual environment in the current directory:
-
-   ```bash
-   python3 -m venv .venv
-   ```
+4. Configure your API keys and settings in the `config.py` file.
 
 ## Usage
 
