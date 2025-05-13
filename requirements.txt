@@ -12,3 +12,8 @@ kaleido
 writerai 
 plotly
 questionary
+anthropic
+groq
+xai
+setuptools 
+wheel
