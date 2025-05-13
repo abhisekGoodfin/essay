@@ -11,7 +11,6 @@ import boto3
 import groq
 import writerai
 import google.generativeai as genai
-from xai import Grok
 
 class LLMClient:
     """Client for interacting with various LLM APIs."""
@@ -35,6 +34,15 @@ class LLMClient:
                 self.openai_client = openai.OpenAI(api_key=self.api_keys["OPENAI_API_KEY"])
             else:
                 self.openai_client = None
+
+            # XAI (Grok) - Using OpenAI client with custom base URL
+            if self.api_keys.get("XAI_API_KEY"):
+                self.xai_client = openai.OpenAI(
+                    api_key=self.api_keys["XAI_API_KEY"],
+                    base_url="https://api.x.ai/v1"
+                )
+            else:
+                self.xai_client = None
 
             # AWS Bedrock
             if self.api_keys.get("AWS_ACCESS_KEY_ID") and self.api_keys.get("AWS_SECRET_ACCESS_KEY"):
@@ -65,12 +73,6 @@ class LLMClient:
                 self.gemini_client = genai
             else:
                 self.gemini_client = None
-
-            # XAI (Grok)
-            if self.api_keys.get("XAI_API_KEY"):
-                self.xai_client = Grok(api_key=self.api_keys["XAI_API_KEY"])
-            else:
-                self.xai_client = None
 
         except Exception as e:
             logging.error(f"Error initializing LLM clients: {e}")
@@ -174,7 +176,7 @@ class LLMClient:
             raise
 
     def _call_xai(self, model_id: str, prompt: str, parameters: Dict[str, Any]) -> Tuple[str, Dict[str, int]]:
-        """Call XAI's (Grok) API."""
+        """Call XAI's (Grok) API using OpenAI client with custom base URL."""
         try:
             response = self.xai_client.chat.completions.create(
                 model=model_id,

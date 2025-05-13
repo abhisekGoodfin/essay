@@ -1,6 +1,9 @@
 import os
-import logging
+from dotenv import load_dotenv
 from typing import List, Dict, Any
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     """Configuration settings for the application.
@@ -16,16 +19,16 @@ class Config:
     JSON_OUTPUT_FILE = "updated_data_essay.json"
     COMPARISON_SUMMARY_FILE = os.path.join(RESULTS_DIR, "model_comparison_summary.json")
 
-    # API Keys - to be loaded from environment
-    ANTHROPIC_API_KEY = ""
-    OPENAI_API_KEY = ""
-    GROQ_API_KEY = ""
-    GEMINI_API_KEY = ""
-    XAI_API_KEY = ""
-    WRITER_API_KEY = ""
-    AWS_ACCESS_KEY_ID = ""
-    AWS_SECRET_ACCESS_KEY = ""
-    AWS_REGION = "us-east-1"
+    # API Keys - loaded from environment
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    XAI_API_KEY = os.getenv("XAI_API_KEY", "")
+    WRITER_API_KEY = os.getenv("WRITER_API_KEY", "")
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
     # Model selection flags
     RUN_ANTHROPIC_MODELS = True
@@ -266,4 +269,4 @@ class Config:
                 "response_format": {"type": "json_object"}
             }
         }
-    ] 
+    ]
