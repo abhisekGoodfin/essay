@@ -228,7 +228,12 @@ def _run_model_evaluations(
                     "total_run_time_s": total_run_time_seconds, 
                     "num_processed": len(llm_run_results_data),
                     "results_file": str(model_response_filename),
-                    "config_id_used": config_id_loop 
+                    "config_id_used": config_id_loop,
+                    "average_similarity": classification_metrics.get('average_similarity', 0.0),
+                    "average_judge_score": classification_metrics.get('average_judge_score', 0.0),
+                    "judge_scores": classification_metrics.get('judge_scores', []),
+                    "similarity_scores": classification_metrics.get('similarity_scores', []),
+                    "evaluation_details": classification_metrics.get('evaluation_details', [])
                 }
 
                 if base_model_id_for_summary not in all_model_runs_summary:

@@ -44,15 +44,7 @@ def check_for_refusal(text: str) -> tuple[bool, str | None]:
 
 def run_self_discover_strategy(essay_data: List[Dict[str, Any]], model_config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Runs the Self-Discover prompting strategy on a list of essay prompts.
-
-    Args:
-        essay_data: A list of dictionaries, each representing an essay prompt.
-        model_config: Configuration dictionary for the LLM API call.
-
-    Returns:
-        A list of dictionaries, each containing the original essay data
-        plus the LLM's response, essay text, refusal status, timing, etc.
+    Processes each essay prompt using the specified LLM with the self-discover strategy.
     """
     results = []
     total_essays = len(essay_data)
@@ -64,9 +56,9 @@ def run_self_discover_strategy(essay_data: List[Dict[str, Any]], model_config: D
             frame = sys._current_frames().get(thread.ident)
             if frame:
                 loading_animation = next((lv for lv in frame.f_locals.values() if isinstance(lv, ui_utils.LoadingAnimation)), None)
-            if loading_animation: break
-    
-    if loading_animation: loading_animation.start()
+            if loading_animation:
+                break
+
     for i, essay_item in enumerate(essay_data):
         if loading_animation:
             loading_animation.update_progress(i + 1, total_essays)
@@ -85,46 +77,57 @@ def run_self_discover_strategy(essay_data: List[Dict[str, Any]], model_config: D
                  results.append({
                      **essay_item,
                      'essay_text': "",
+                     'model_answer': "",  # Include empty model answer
                      'is_refusal': True,
                      'refusal_reason': "API call failed",
                      'response_time': end_time - start_time, 
                      'error': "API call failed"
                  })
                  continue  
+
             response_time = response_data.get('response_time')
             if response_time is None: 
                 end_time = time.time()
                 response_time = end_time - start_time
-            llm_response_text = response_data.get('raw_response_text', 'ERROR: No raw response text found') 
-            input_tokens = response_data.get('input_tokens')
-            output_tokens = response_data.get('output_tokens')
-            
-            is_refusal, refusal_reason = check_for_refusal(llm_response_text)
-            essay_text = "" if is_refusal else llm_response_text.strip()
-            
+
+            response_content = response_data.get('response_content', {})
+            if isinstance(response_content, dict):
+                essay_text = response_content.get('essay', '')
+                model_answer = response_content.get('model_answer', '')
+                is_refusal = response_content.get('is_refusal', False)
+                refusal_reason = response_content.get('refusal_reason')
+                error_message = response_content.get('error')
+            else:
+                essay_text = ""
+                model_answer = ""
+                is_refusal = True
+                refusal_reason = "Invalid response format"
+                error_message = "Response content is not a dictionary"
+
             results.append({
                 **essay_item,
                 'essay_text': essay_text,
+                'model_answer': model_answer,  # Include model answer
                 'is_refusal': is_refusal,
                 'refusal_reason': refusal_reason,
                 'response_time': response_time,
-                'input_tokens': input_tokens,
-                'output_tokens': output_tokens,
-                'essay_length': len(essay_text)
+                'input_tokens': response_data.get('input_tokens'),
+                'output_tokens': response_data.get('output_tokens'),
+                'error': error_message,
+                'prompt_strategy': 'self_discover'
             })
-        except Exception as e:            
-            end_time = time.time() 
-            elapsed_time = end_time - start_time if 'start_time' in locals() else 0
-            logger.error(f"Error processing essay {i+1} with Self-Discover strategy: {e}", exc_info=True)
+
+        except Exception as e:
+            logger.error(f"Error processing essay {i+1} with self-discover strategy: {str(e)}")
             results.append({
                 **essay_item,
                 'essay_text': "",
+                'model_answer': "",  # Include empty model answer
                 'is_refusal': True,
                 'refusal_reason': f"Error: {str(e)}",
-                'response_time': elapsed_time, 
-                'error': str(e)
+                'response_time': time.time() - start_time,
+                'error': str(e),
+                'prompt_strategy': 'self_discover'
             })
 
-    if loading_animation: loading_animation.stop()
-    logger.info(f"Self-Discover strategy completed for {len(results)} items using {config_id}.")
     return results 

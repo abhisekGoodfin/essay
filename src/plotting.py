@@ -92,7 +92,13 @@ def _prepare_plot_data(all_model_run_summaries: dict) -> pd.DataFrame | None:
         or None if the input is empty or malformed.
     """
     plot_data = []
-    numerical_metrics = ['accuracy', 'f1_score', 'precision', 'recall', 'average_latency_ms', 'total_cost', 'total_tokens', 'avg_answer_length', 'total_run_time_s']
+    numerical_metrics = [
+        'accuracy', 'f1_score', 'precision', 'recall', 
+        'average_latency_ms', 'total_cost', 'total_tokens', 
+        'avg_answer_length', 'total_run_time_s',
+        'average_similarity', 'average_judge_score',
+        'std_dev_similarity', 'judge_scores', 'similarity_scores'
+    ]
 
     if not all_model_run_summaries:
         logger.warning("No model run summaries provided for plotting.")
@@ -619,25 +625,36 @@ def generate_all_charts(all_model_run_summaries: dict, charts_output_dir: Union[
     primary_metric = 'accuracy'
     latency_metric = 'average_latency_ms'
     cost_metric = 'total_cost'
+    essay_metrics = ['average_similarity', 'average_judge_score', 'std_dev_similarity']
 
     # 1. Key Strategy Comparison Plots (Bar)
-    key_metrics_for_strategy_comparison = [primary_metric, 'f1_score', latency_metric, cost_metric]
+    key_metrics_for_strategy_comparison = [primary_metric, 'f1_score', latency_metric, cost_metric] + essay_metrics
     for metric in key_metrics_for_strategy_comparison:
         logger.info(f"Generating strategy comparison plot for: {metric}")
         _plot_metric_by_strategy_comparison(df, output_dir, metric)
 
     # 2. SC-CoT N=3 vs N=5 Comparison (Bar)
     logger.info("Generating SC-CoT N sample comparison plots...")
-    sc_metrics = [primary_metric, latency_metric, cost_metric]
+    sc_metrics = [primary_metric, latency_metric, cost_metric] + essay_metrics
     for metric in sc_metrics:
         _plot_sc_comparison(df, output_dir, metric=metric)
 
 
     # 3. Trade-off Scatter Plots
     logger.info("Generating trade-off scatter plots...")
+    # MCQ metrics trade-offs
     _plot_scatter_tradeoff(df, output_dir, metric_y=primary_metric, metric_x=latency_metric) # Accuracy vs Latency
     _plot_scatter_tradeoff(df, output_dir, metric_y=primary_metric, metric_x=cost_metric)    # Accuracy vs Cost
     _plot_scatter_tradeoff(df, output_dir, metric_y=latency_metric, metric_x=cost_metric)   # Latency vs Cost
+    
+    # Essay metrics trade-offs
+    for essay_metric in essay_metrics:
+        _plot_scatter_tradeoff(df, output_dir, metric_y=essay_metric, metric_x=latency_metric)
+        _plot_scatter_tradeoff(df, output_dir, metric_y=essay_metric, metric_x=cost_metric)
+        if essay_metric != 'std_dev_similarity':  # Don't plot std dev against other essay metrics
+            for other_metric in essay_metrics:
+                if other_metric != essay_metric:
+                    _plot_scatter_tradeoff(df, output_dir, metric_y=essay_metric, metric_x=other_metric)
 
 
     # 4. Total Time (Latency) Comparison (Bar)
@@ -648,7 +665,10 @@ def generate_all_charts(all_model_run_summaries: dict, charts_output_dir: Union[
     # 5. Per-Strategy Metric Comparison (Bar)
     logger.info("Generating per-strategy metric comparison plots...")
     all_strategies = df['Strategy'].unique()
-    metrics_per_strategy = [primary_metric, 'f1_score', latency_metric, cost_metric, 'total_tokens']
+    metrics_per_strategy = [
+        primary_metric, 'f1_score', latency_metric, cost_metric, 
+        'total_tokens', 'average_similarity', 'average_judge_score'
+    ]
     for strategy in all_strategies:
          logger.debug(f"Generating plots for strategy: {strategy}")
          # Filter metrics actually available for this strategy in the dataframe

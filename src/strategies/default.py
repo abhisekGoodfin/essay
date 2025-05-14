@@ -56,6 +56,7 @@ def run_default_strategy(data: list[dict], model_config_item: dict) -> list[dict
         llm_data = llm_clients.get_llm_response(prompt, model_config_item)
 
         essay_text = ""
+        model_answer = ""
         is_refusal = False
         refusal_reason = None
         response_time = None
@@ -71,61 +72,21 @@ def run_default_strategy(data: list[dict], model_config_item: dict) -> list[dict
             current_output_tokens = llm_data.get('output_tokens')
             raw_response_text = llm_data.get('raw_response_text')
             error_message = llm_data.get('error_message')
-
-            if raw_response_text:
-                essay_text = raw_response_text.strip()
-                essay_length = len(essay_text)
-                
-                # Check for refusals
-                refusal_phrases = [
-                    "cannot answer",
-                    "no options",
-                    "incomplete question",
-                    "not provided",
-                    "unable to determine",
-                    "cannot provide a response",
-                    "question is unclear",
-                    "lack sufficient information",
-                    "insufficient information",
-                    "cannot write an essay",
-                    "unable to write",
-                    "cannot complete this essay",
-                    "not enough information to write",
-                    "cannot generate an essay",
-                    "unable to generate a response",
-                    "cannot provide an essay",
-                    "unable to provide an essay"
-                ]
-                
-                for phrase in refusal_phrases:
-                    if phrase.lower() in essay_text.lower():
-                        logger.warning(f"Refusal phrase '{phrase}' detected in response for {config_id}. Response: '{essay_text[:150]}...'")
-                        is_refusal = True
-                        refusal_reason = phrase
-                        break
-                
-                if is_refusal:
-                    logger.warning(f"Essay {i + 1} ({config_id}): Model refused to answer. Reason: {refusal_reason}")
-                else:
-                    logger.info(f"Essay {i + 1} ({config_id}): Successfully generated essay of length {essay_length}")
-            else:
-                logger.warning(f"Essay {i + 1} ({config_id}): Default strategy received no raw response text.")
-                is_refusal = True
-                refusal_reason = "Empty response"
-
-            if error_message:
-                logger.warning(f"Essay {i + 1} ({config_id}): Problem with LLM call: {error_message}")
-                is_refusal = True
-                refusal_reason = f"API Error: {error_message}"
-
-        else:
-            logger.error(f"Essay {i + 1} ({config_id}): Failed to get any valid LLM response (API call likely failed).")
-            is_refusal = True
-            refusal_reason = "API call failed"
+            
+            response_content = llm_data.get('response_content', {})
+            if isinstance(response_content, dict):
+                essay_text = response_content.get('essay', '')
+                model_answer = response_content.get('model_answer', '')
+                is_refusal = response_content.get('is_refusal', False)
+                refusal_reason = response_content.get('refusal_reason')
+                error_message = response_content.get('error')
+            
+            essay_length = len(essay_text)
 
         updated_entry = entry.copy()
         updated_entry.update({
             'essay_text': essay_text,
+            'model_answer': model_answer,
             'is_refusal': is_refusal,
             'refusal_reason': refusal_reason,
             'response_time': response_time,

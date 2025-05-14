@@ -741,7 +741,8 @@ def get_llm_response(prompt: str, model_config: dict, is_json_response_expected:
             
             parsed_content_for_return = {
                 "essay": response_text_for_error.strip(),
-                "is_refusal": refusal_detected
+                "is_refusal": refusal_detected,
+                "model_answer": response_text_for_error.strip()  # Include model answer
             }
             if refusal_detected:
                 parsed_content_for_return["refusal_reason"] = refusal_reason
@@ -751,7 +752,8 @@ def get_llm_response(prompt: str, model_config: dict, is_json_response_expected:
             parsed_content_for_return = {
                 "essay": "",
                 "is_refusal": True,
-                "error": "Empty response"
+                "error": "Empty response",
+                "model_answer": ""  # Include empty model answer
             }
 
     final_result = {
